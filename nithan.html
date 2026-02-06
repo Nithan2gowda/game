@@ -4,33 +4,27 @@
   <meta charset="UTF-8">
   <title>Happy Memory Game</title>
 
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/d<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Memory Game</title>
-
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
   <style>
     body {
       margin: 0;
       font-family: 'Segoe UI', sans-serif;
-      background: linear-gradient(135deg, #a1c4fd, #c2e9fb);
+      background: linear-gradient(135deg, #ff9a9e, #fad0c4, #fbc2eb);
       min-height: 100vh;
       display: flex;
-      justify-content: center;
       align-items: center;
+      justify-content: center;
     }
 
     .screen {
       display: none;
       background: white;
       padding: 30px;
-      border-radius: 20px;
+      border-radius: 22px;
       width: 380px;
       text-align: center;
-      box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.25);
       animation: pop 0.4s ease;
     }
 
@@ -45,35 +39,37 @@
 
     input {
       width: 80%;
-      padding: 10px;
-      margin: 8px 0;
-      border-radius: 10px;
-      border: 1px solid #ccc;
+      padding: 12px;
+      margin: 10px 0;
+      border-radius: 12px;
+      border: 2px solid #dfe6e9;
+      font-size: 16px;
     }
 
     button {
-      padding: 10px 20px;
+      padding: 12px 25px;
       margin: 10px;
       border: none;
       border-radius: 20px;
       background: linear-gradient(135deg, #ff7675, #fd79a8);
       color: white;
       cursor: pointer;
-      font-size: 15px;
+      font-size: 16px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
     }
 
     .board {
       display: grid;
-      grid-template-columns: repeat(4, 75px);
-      gap: 12px;
+      grid-template-columns: repeat(4, 80px);
+      gap: 14px;
       justify-content: center;
-      margin-top: 10px;
+      margin-top: 15px;
     }
 
     .card {
-      width: 75px;
-      height: 75px;
-      perspective: 600px;
+      width: 80px;
+      height: 80px;
+      perspective: 700px;
       cursor: pointer;
     }
 
@@ -93,7 +89,7 @@
       position: absolute;
       width: 100%;
       height: 100%;
-      border-radius: 15px;
+      border-radius: 16px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -101,20 +97,20 @@
     }
 
     .front {
-      background: #ffeaa7;
+      background: linear-gradient(135deg, #ffeaa7, #fab1a0);
       font-size: 36px;
       transform: rotateY(180deg);
     }
 
     .back {
-      background: linear-gradient(135deg, #6c5ce7, #74b9ff);
+      background: linear-gradient(135deg, #74b9ff, #6c5ce7);
       color: white;
       font-size: 26px;
     }
 
     .status {
+      margin-top: 10px;
       font-weight: bold;
-      margin-top: 8px;
       color: #0984e3;
     }
 
@@ -123,8 +119,8 @@
       inset: 0;
       background: rgba(0,0,0,0.5);
       display: none;
-      justify-content: center;
       align-items: center;
+      justify-content: center;
     }
 
     .overlay.active {
@@ -133,16 +129,16 @@
 
     .result-box {
       background: white;
-      padding: 25px;
-      border-radius: 20px;
+      padding: 30px;
+      border-radius: 22px;
+      width: 320px;
       text-align: center;
-      width: 300px;
     }
   </style>
 </head>
 <body>
 
-<!-- MODE SELECTION -->
+<!-- MODE -->
 <div class="screen active" id="modeScreen">
   <h1>🧠 Memory Game</h1>
   <p>Select Game Mode</p>
@@ -150,7 +146,7 @@
   <button onclick="selectMode('two')">Play with Friend</button>
 </div>
 
-<!-- NAME INPUT -->
+<!-- NAMES -->
 <div class="screen" id="nameScreen">
   <h2>Enter Player Name(s)</h2>
   <input id="p1" placeholder="Player 1 name">
@@ -177,28 +173,24 @@
 <script>
   const icons = ['🍦','🚗','🎂','🐶','🎈','🍕','🚀','🍩'];
   let mode, cards, first, second, lock;
-  let score, matched;
-  let p1, p2, turn, p1Score, p2Score;
+  let score, matched, p1, p2, turn, p1Score, p2Score;
 
   const board = document.getElementById("board");
   const status = document.getElementById("status");
 
   function selectMode(m) {
     mode = m;
-    show("nameScreen");
+    document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+    document.getElementById("nameScreen").classList.add("active");
     document.getElementById("p2").style.display = m === "two" ? "block" : "none";
   }
 
   function startGame() {
     p1 = document.getElementById("p1").value || "Player 1";
     p2 = document.getElementById("p2").value || "Player 2";
-    show("gameScreen");
-    initGame();
-  }
-
-  function show(id) {
     document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
-    document.getElementById(id).classList.add("active");
+    document.getElementById("gameScreen").classList.add("active");
+    initGame();
   }
 
   function initGame() {
@@ -231,312 +223,26 @@
     if (lock || card.classList.contains("flipped")) return;
     card.classList.add("flipped");
 
-    if (!first) {
-      first = card;
-      return;
-    }
-
+    if (!first) return first = card;
     second = card;
     lock = true;
 
     if (first.dataset.icon === second.dataset.icon) {
       matched++;
-
-      if (mode === "two") {
-        if (turn === 1) p1Score++;
-        else p2Score++;
-        // SAME PLAYER CONTINUES
-      }
-
-      resetTurn();
-
+      if (mode === "two") turn === 1 ? p1Score++ : p2Score++;
+      reset();
       if (matched === icons.length) endGame();
     } else {
       if (mode === "solo") score -= 4;
       if (mode === "two") turn = turn === 1 ? 2 : 1;
-
-      setTimeout(() => {
-        first.classList.remove("flipped");
-        second.classList.remove("flipped");
-        resetTurn();
-        if (mode === "solo" && score <= 0) endGame();
-      }, 700);
-    }
-
-    updateStatus();
-  }
-
-  function resetTurn() {
-    first = second = null;
-    lock = false;
-  }
-
-  function updateStatus() {
-    if (mode === "solo") {
-      status.innerText = `Score: ${score}`;
-    } else {
-      status.innerText =
-        `Turn: ${turn === 1 ? p1 : p2} | ${p1}: ${p1Score} | ${p2}: ${p2Score}`;
-    }
-  }
-
-  function endGame() {
-    document.getElementById("resultOverlay").classList.add("active");
-
-    if (mode === "solo") {
-      document.getElementById("resultTitle").innerText = "🎉 Game Finished";
-      document.getElementById("resultText").innerText =
-        `${p1}, your score is ${score}`;
-    } else {
-      let winner =
-        p1Score > p2Score ? p1 :
-        p2Score > p1Score ? p2 : "It's a Tie";
-
-      document.getElementById("resultTitle").innerText = "🏆 Result";
-      document.getElementById("resultText").innerText = `Winner: ${winner}`;
-    }
-
-    confetti({ particleCount: 200, spread: 80 });
-  }
-</script>
-
-</body>
-</html>
-ist/confetti.browser.min.js"></script>
-
-  <style>
-    body {
-      margin: 0;
-      font-family: 'Segoe UI', sans-serif;
-      background: linear-gradient(135deg, #ff9a9e, #fad0c4, #fbc2eb);
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .screen {
-      display: none;
-      text-align: center;
-      background: white;
-      padding: 35px;
-      border-radius: 25px;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.25);
-      width: 360px;
-      animation: pop 0.4s ease;
-    }
-
-    .screen.active {
-      display: block;
-    }
-
-    @keyframes pop {
-      from { transform: scale(0.8); opacity: 0; }
-      to { transform: scale(1); opacity: 1; }
-    }
-
-    h1 {
-      color: #2d3436;
-    }
-
-    p {
-      color: #636e72;
-    }
-
-    input {
-      padding: 12px;
-      width: 80%;
-      font-size: 16px;
-      margin-top: 15px;
-      border-radius: 12px;
-      border: 2px solid #dfe6e9;
-    }
-
-    button {
-      margin-top: 20px;
-      padding: 12px 25px;
-      font-size: 16px;
-      border: none;
-      border-radius: 20px;
-      background: linear-gradient(135deg, #ff7675, #fd79a8);
-      color: white;
-      cursor: pointer;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
-    }
-
-    #score {
-      font-size: 18px;
-      font-weight: bold;
-      color: #0984e3;
-    }
-
-    .board {
-      display: grid;
-      grid-template-columns: repeat(4, 85px);
-      gap: 14px;
-      justify-content: center;
-      margin-top: 15px;
-    }
-
-    .card {
-      width: 85px;
-      height: 85px;
-      perspective: 700px;
-      cursor: pointer;
-    }
-
-    .card-inner {
-      width: 100%;
-      height: 100%;
-      transition: transform 0.5s;
-      transform-style: preserve-3d;
-      position: relative;
-    }
-
-    .card.flipped .card-inner {
-      transform: rotateY(180deg);
-    }
-
-    .face {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      border-radius: 18px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      backface-visibility: hidden;
-    }
-
-    .front {
-      background: linear-gradient(135deg, #ffeaa7, #fab1a0);
-      font-size: 40px;
-      transform: rotateY(180deg);
-    }
-
-    .back {
-      background: linear-gradient(135deg, #74b9ff, #6c5ce7);
-      color: white;
-      font-size: 28px;
-    }
-
-    /* RESULT POPUP */
-    .overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.5);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 10;
-    }
-
-    .overlay.active {
-      display: flex;
-    }
-
-    .result-box {
-      background: white;
-      padding: 30px;
-      border-radius: 25px;
-      text-align: center;
-      width: 320px;
-      animation: pop 0.5s ease;
-    }
-  </style>
-</head>
-<body>
-
-<!-- ✅ ONLY ONE WELCOME SCREEN -->
-<div class="screen active" id="welcomeScreen">
-  <h1>🎉 Welcome!</h1>
-  <p>Enter your name to start</p>
-  <input id="playerName" placeholder="Your name">
-  <br>
-  <button type="button" onclick="startGame()">Start Game</button>
-</div>
-
-<!-- GAME SCREEN -->
-<div class="screen" id="gameScreen">
-  <h1>🧠 Memory Game</h1>
-  <div id="score">Score: 100</div>
-  <div class="board" id="board"></div>
-</div>
-
-<!-- RESULT POPUP -->
-<div class="overlay" id="resultOverlay">
-  <div class="result-box">
-    <h2 id="resultTitle"></h2>
-    <p id="resultText"></p>
-    <button onclick="restart()">Play Again</button>
-  </div>
-</div>
-
-<script>
-  const icons = ['🍦','🚗','🎂','🐶','🎈','🍕','🚀','🍩'];
-  let cards, first, second, lock, score, matched, player;
-
-  const board = document.getElementById("board");
-  const scoreEl = document.getElementById("score");
-
-  function show(id) {
-    document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
-    document.getElementById(id).classList.add("active");
-  }
-
-  function startGame() {
-    player = document.getElementById("playerName").value.trim();
-    if (!player) return alert("Please enter your name 😊");
-    show("gameScreen");
-    initGame();
-  }
-
-  function initGame() {
-    board.innerHTML = "";
-    cards = [...icons, ...icons].sort(() => Math.random() - 0.5);
-    score = 100;
-    matched = 0;
-    lock = false;
-    first = second = null;
-    scoreEl.innerText = "Score: 100";
-
-    cards.forEach(icon => {
-      const card = document.createElement("div");
-      card.className = "card";
-      card.dataset.icon = icon;
-      card.innerHTML = `
-        <div class="card-inner">
-          <div class="face front">${icon}</div>
-          <div class="face back">?</div>
-        </div>`;
-      card.onclick = () => flip(card);
-      board.appendChild(card);
-    });
-  }
-
-  function flip(card) {
-    if (lock || card.classList.contains("flipped")) return;
-    card.classList.add("flipped");
-
-    if (!first) return first = card;
-
-    second = card;
-    lock = true;
-
-    if (first.dataset.icon === second.dataset.icon) {
-      matched++;
-      reset();
-      if (matched === icons.length) endGame(true);
-    } else {
-      score -= 4;
-      scoreEl.innerText = `Score: ${score}`;
       setTimeout(() => {
         first.classList.remove("flipped");
         second.classList.remove("flipped");
         reset();
-        if (score <= 0) endGame(false);
-      }, 800);
+        if (mode === "solo" && score <= 0) endGame();
+      }, 700);
     }
+    updateStatus();
   }
 
   function reset() {
@@ -544,19 +250,22 @@ ist/confetti.browser.min.js"></script>
     lock = false;
   }
 
-  function endGame(won) {
-    document.getElementById("resultOverlay").classList.add("active");
-    document.getElementById("resultTitle").innerText =
-      won ? "🎉 Congratulations!" : "😢 Game Over";
-    document.getElementById("resultText").innerHTML =
-      `<b>${player}</b>, your score is <b>${score}</b>`;
-    if (won) confetti({ particleCount: 200, spread: 80 });
+  function updateStatus() {
+    status.innerText =
+      mode === "solo"
+        ? `Score: ${score}`
+        : `Turn: ${turn === 1 ? p1 : p2} | ${p1}: ${p1Score} | ${p2}: ${p2Score}`;
   }
 
-  function restart() {
-    document.getElementById("resultOverlay").classList.remove("active");
-    document.getElementById("playerName").value = "";
-    show("welcomeScreen");
+  function endGame() {
+    document.getElementById("resultOverlay").classList.add("active");
+    let result =
+      mode === "solo"
+        ? `${p1}, your score is ${score}`
+        : p1Score > p2Score ? `${p1} Wins!` : p2Score > p1Score ? `${p2} Wins!` : "It's a Tie";
+    document.getElementById("resultTitle").innerText = "🏆 Game Over";
+    document.getElementById("resultText").innerText = result;
+    confetti({ particleCount: 200, spread: 80 });
   }
 </script>
 
