@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Happy Memory Game</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #ff9a9e, #fad0c4, #fbc2eb);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .screen {
+      display: none;
+      text-align: center;
+      background: white;
+      padding: 35px;
+      border-radius: 25px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.25);
+      width: 360px;
+      animation: pop 0.4s ease;
+    }
+
+    .screen.active {
+      display: block;
+    }
+
+    @keyframes pop {
+      from { transform: scale(0.8); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    h1 {
+      color: #2d3436;
+    }
+
+    p {
+      color: #636e72;
+    }
+
+    input {
+      padding: 12px;
+      width: 80%;
+      font-size: 16px;
+      margin-top: 15px;
+      border-radius: 12px;
+      border: 2px solid #dfe6e9;
+    }
+
+    button {
+      margin-top: 20px;
+      padding: 12px 25px;
+      font-size: 16px;
+      border: none;
+      border-radius: 20px;
+      background: linear-gradient(135deg, #ff7675, #fd79a8);
+      color: white;
+      cursor: pointer;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+    }
+
+    #score {
+      font-size: 18px;
+      font-weight: bold;
+      color: #0984e3;
+    }
+
+    .board {
+      display: grid;
+      grid-template-columns: repeat(4, 85px);
+      gap: 14px;
+      justify-content: center;
+      margin-top: 15px;
+    }
+
+    .card {
+      width: 85px;
+      height: 85px;
+      perspective: 700px;
+      cursor: pointer;
+    }
+
+    .card-inner {
+      width: 100%;
+      height: 100%;
+      transition: transform 0.5s;
+      transform-style: preserve-3d;
+      position: relative;
+    }
+
+    .card.flipped .card-inner {
+      transform: rotateY(180deg);
+    }
+
+    .face {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      backface-visibility: hidden;
+    }
+
+    .front {
+      background: linear-gradient(135deg, #ffeaa7, #fab1a0);
+      font-size: 40px;
+      transform: rotateY(180deg);
+    }
+
+    .back {
+      background: linear-gradient(135deg, #74b9ff, #6c5ce7);
+      color: white;
+      font-size: 28px;
+    }
+
+    /* RESULT POPUP */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+    }
+
+    .overlay.active {
+      display: flex;
+    }
+
+    .result-box {
+      background: white;
+      padding: 30px;
+      border-radius: 25px;
+      text-align: center;
+      width: 320px;
+      animation: pop 0.5s ease;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ✅ ONLY ONE WELCOME SCREEN -->
+<div class="screen active" id="welcomeScreen">
+  <h1>🎉 Welcome!</h1>
+  <p>Enter your name to start</p>
+  <input id="playerName" placeholder="Your name">
+  <br>
+  <button type="button" onclick="startGame()">Start Game</button>
+</div>
+
+<!-- GAME SCREEN -->
+<div class="screen" id="gameScreen">
+  <h1>🧠 Memory Game</h1>
+  <div id="score">Score: 100</div>
+  <div class="board" id="board"></div>
+</div>
+
+<!-- RESULT POPUP -->
+<div class="overlay" id="resultOverlay">
+  <div class="result-box">
+    <h2 id="resultTitle"></h2>
+    <p id="resultText"></p>
+    <button onclick="restart()">Play Again</button>
+  </div>
+</div>
+
+<script>
+  const icons = ['🍦','🚗','🎂','🐶','🎈','🍕','🚀','🍩'];
+  let cards, first, second, lock, score, matched, player;
+
+  const board = document.getElementById("board");
+  const scoreEl = document.getElementById("score");
+
+  function show(id) {
+    document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+    document.getElementById(id).classList.add("active");
+  }
+
+  function startGame() {
+    player = document.getElementById("playerName").value.trim();
+    if (!player) return alert("Please enter your name 😊");
+    show("gameScreen");
+    initGame();
+  }
+
+  function initGame() {
+    board.innerHTML = "";
+    cards = [...icons, ...icons].sort(() => Math.random() - 0.5);
+    score = 100;
+    matched = 0;
+    lock = false;
+    first = second = null;
+    scoreEl.innerText = "Score: 100";
+
+    cards.forEach(icon => {
+      const card = document.createElement("div");
+      card.className = "card";
+      card.dataset.icon = icon;
+      card.innerHTML = `
+        <div class="card-inner">
+          <div class="face front">${icon}</div>
+          <div class="face back">?</div>
+        </div>`;
+      card.onclick = () => flip(card);
+      board.appendChild(card);
+    });
+  }
+
+  function flip(card) {
+    if (lock || card.classList.contains("flipped")) return;
+    card.classList.add("flipped");
+
+    if (!first) return first = card;
+
+    second = card;
+    lock = true;
+
+    if (first.dataset.icon === second.dataset.icon) {
+      matched++;
+      reset();
+      if (matched === icons.length) endGame(true);
+    } else {
+      score -= 4;
+      scoreEl.innerText = `Score: ${score}`;
+      setTimeout(() => {
+        first.classList.remove("flipped");
+        second.classList.remove("flipped");
+        reset();
+        if (score <= 0) endGame(false);
+      }, 800);
+    }
+  }
+
+  function reset() {
+    first = second = null;
+    lock = false;
+  }
+
+  function endGame(won) {
+    document.getElementById("resultOverlay").classList.add("active");
+    document.getElementById("resultTitle").innerText =
+      won ? "🎉 Congratulations!" : "😢 Game Over";
+    document.getElementById("resultText").innerHTML =
+      `<b>${player}</b>, your score is <b>${score}</b>`;
+    if (won) confetti({ particleCount: 200, spread: 80 });
+  }
+
+  function restart() {
+    document.getElementById("resultOverlay").classList.remove("active");
+    document.getElementById("playerName").value = "";
+    show("welcomeScreen");
+  }
+</script>
+
+</body>
+</html>
